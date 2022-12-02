@@ -1,6 +1,7 @@
 import time, random
 import RPi.GPIO as GPIO
-import pynput, playsound
+from pynput import keyboard
+import playsound
 
 
 class Light:
@@ -14,6 +15,7 @@ class Light:
         
     def __repr__(self):
         return f"{self.get_color()} ({str(self.get_board_position())}) Toggled: {str(self.is_toggled())}"
+    
         
     def get_color(self):
         return self.__color
@@ -99,51 +101,56 @@ class LightBoard:
             elif i >= start_index:
                 self.__lights[i].setToggle(True)
         
-                
+
+
 class Game:
-    __slots__ = ['__hits', '__misses', '__startTime', '__endTime', '__timeAllowed', '__currentTime', '__hasEnded', '__moles']        
+    __slots__ = ['__score', '__playerPos','__startTime', '__endTime', '__timeAllowed', '__currentTime', '__hasEnded', '__coinPos', '__lights']        
     
     def __init__(self, timeAllowed, lights):
-        self.__hits = 0
-        self.__misses = 0
+        self.__score = 0
         self.__startTime = time.perf_counter
         self.__timeAllowed = timeAllowed
         self.__currentTime = timeAllowed
+        self.__lights = lights
+        self.__playerPos = 0
         self.__hasEnded = False
-        self.__moles = lights
+        self.__coinPos = random.randint(0, self.__lights.total_lights() - 1)
+        
+        self.__lights.toggle_at(self.__coinPos, True)
+        
+        # Implement keyboard listener
+        
+        self.__run_event()
+        
     
     def runGame(self):
         if self.__hasEnded:
             raise Exception("Cannot run game that has ended")
         
-        time.sleep(.05)
-        self.__currentTime -= .05
-        
-        self.__spawnMoleEvent()
-        
-        self.__printMoles()
+        self.__checkKeys()
+        # self.__printMoles()
         
         if self.__currentTime < 0:
             self.__hasEnded = True
             self.__endTime = time.perf_counter
             print("Game completed!")
+            
         
-    def __createMole(self):
-        
-        if self.__moles.totalActive() >= 3:
+    def __createCoin(self):
+        if self.__lights.totalActive() >= 3:
             return
         
         while True:
-            mole_pos = random.randint(0, self.__moles.total_lights())
-            if self.__moles.is_toggled(mole_pos):
+            coin_pos = random.randint(0, self.__lights.total_lights())
+            if self.__lights.is_toggled(coin_pos):
                 continue
             else:
-                self.__moles.toggle_at(mole_pos, True)
+                self.__lights.toggle_at(coin_pos, True)
                 break
                 
-    def __printMoles(self):
+    def __printBoard(self):
         string = "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
-        for mole in self.__moles.get_lights():
+        for mole in self.__lights.get_lights():
             if mole.is_toggled():
                 
                 string += "■ "
@@ -166,7 +173,52 @@ class Game:
         if chance < 8:
             self.__createMole()
         pass
+    
+    def __run_event(self):
         
+        with keyboard.Listener(on_press=self.on_press, on_release=self.on_release) as listener:
+            listener.join()
+        return False
+    
+    def on_press(self, key):
+        
+        # Handle the player movement
+        self.__lights.toggle_at(self.__playerPos, False)
+        if key == keyboard.Key.right:
+            if self.__playerPos == self.__lights.total_lights() - 1:
+                self.__lights.toggle_at(self.__playerPos, True)
+                pass
+            else:
+                self.__playerPos += 1
+                self.__lights.toggle_at(self.__playerPos, True)
+
+        elif key == keyboard.Key.left:
+            if self.__playerPos == 0:
+                self.__lights.toggle_at(self.__playerPos, True)
+                pass
+            else:
+                self.__playerPos -= 1
+                self.__lights.toggle_at(self.__playerPos, True)
+        else:
+            self.__lights.toggle_at(self.__playerPos, True)
+
+        # Check if the player is at coin position.
+        
+        if self.__playerPos == self.__coinPos:
+            self.__lights.toggle_at(self.__playerPos, True)
+
+            # Play sound
+            self.__coinPos = ((self.__coinPos + 4) + random.randint(1,2)) % 8
+            self.__lights.toggle_at(self.__coinPos, True)
+                
+        print(f"New player position: {str(self.__playerPos)}")
+
+    def on_release(self, key):
+        pass
+        
+    
+
+
         
 def lights_setup(lights):
     l1 = Light('red', 18)
@@ -204,23 +256,17 @@ def main():
     lights_setup(lights)
     
     lights.toggle_all_to(False)
+    #game = Game(10, lights)
     
-    game = Game(10, lights)
+    game = Game(60, lights)
+    #i = 0
     
+    # playsound.playsound('./audio/shovel-thwack-1-94135.mp3')
     
-    i = 0
-    
-    playsound.playsound('./audio/shovel-thwack-1-94135.mp3')
-    
-    while not game.hasCompleted():
-        game.runGame()
-        print("Current Time: " + str(game.get_current_time()))
-        # lights.toggle_all() # 
-
-        
-    
-    
-            
+    #while not game.hasCompleted():
+    #    game.runGame()
+    #   print("Current Time: " + str(game.get_current_time()))
+        # lights.toggle_all() 
         
 if __name__ == "__main__":
     main()

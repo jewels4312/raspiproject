@@ -43,6 +43,9 @@ class LightBoard:
     def add_light(self, light):
         self.__lights.append(light)
         
+    def get_lights(self):
+        return self.__lights
+        
     def toggle_light(self, color):
         for light in self.__lights:
             if light.get_color() == color:
@@ -63,6 +66,26 @@ class LightBoard:
         for light in self.__lights:
             light.setToggle(toggle)
     
+    def is_toggled(self, index):
+        if index < 0 or index > len(self.__lights) - 1:
+            return False
+        else:
+            return self.__lights[index].is_toggled()
+    
+    def toggle_at(self, index, toggle):
+        if index < 0 or index > len(self.__lights) - 1:
+            return False
+        else:
+            self.__lights[index].setToggle(toggle)
+    
+    
+    def totalActive(self):
+        count = 0
+        for i in range(len(self.__lights)):
+            if self.__lights[i].is_toggled():
+                count += 1
+        return count
+    
     def wave(self, i, size=3):
         total_lights = self.total_lights() + (size + 5)
         start_index = i % total_lights - (size + 5)
@@ -78,29 +101,73 @@ class LightBoard:
         
                 
 class Game:
-    __slots__ = ['__hits', '__misses', '__startTime', '__timeAllowed', '__currentTime', '__currentMole']
+    __slots__ = ['__hits', '__misses', '__startTime', '__endTime', '__timeAllowed', '__currentTime', '__hasEnded', '__moles']
     
     
     
-    def __init__(self, timeAllowed):
+    def __init__(self, timeAllowed, lights):
         self.__hits = 0
         self.__misses = 0
         self.__startTime = time.perf_counter
         self.__timeAllowed = timeAllowed
         self.__currentTime = timeAllowed
-        self.__currentMole = -1
-
+        self.__hasEnded = False
+        self.__moles = lights
     
     def runGame(self):
-        time.sleep(.1)
-        self.__currentTime -= .1
+        if self.__hasEnded:
+            raise Exception("Cannot run game that has ended")
+        
+        time.sleep(.05)
+        self.__currentTime -= .05
+        
+        self.__spawnMoleEvent()
+        
+        self.__printMoles()
+        
+        if self.__currentTime < 0:
+            self.__hasEnded = True
+            self.__endTime = time.perf_counter
+            print("Game completed!")
+        
+    def __createMole(self):
+        
+        if self.__moles.totalActive() >= 3:
+            return
+        
+        while True:
+            mole_pos = random.randint(0, self.__moles.total_lights())
+            if self.__moles.is_toggled(mole_pos):
+                continue
+            else:
+                self.__moles.toggle_at(mole_pos, True)
+                break
+                
+    def __printMoles(self):
+        string = "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
+        for mole in self.__moles.get_lights():
+            if mole.is_toggled():
+                string += "■ "
+            else:
+                string += "_ "
+        print(string)
+            
+        
+    def __input(self):
+        pass
         
     def get_current_time(self):
         return self.__currentTime
         
+    def hasCompleted(self):
+        return self.__hasEnded
     
-    def event(): # When player inputs
+    def __spawnMoleEvent(self): # When player inputs
+        chance = random.randint(1, 100)
+        if chance < 8:
+            self.__createMole()
         pass
+        
         
 def lights_setup(lights):
     l1 = Light('red', 18)
@@ -137,12 +204,14 @@ def main():
     # Lights in order.
     lights_setup(lights)
     
-    game = Game(60)
+    lights.toggle_all_to(False)
+    
+    game = Game(10, lights)
     
     
     i = 0
     
-    while True:
+    while not game.hasCompleted():
         game.runGame()
         print("Current Time: " + str(game.get_current_time()))
         # lights.toggle_all() # 

@@ -1,6 +1,6 @@
 import time, random
 import RPi.GPIO as GPIO
-
+import pynput, playsound
 
 
 class Light:
@@ -145,6 +145,7 @@ class Game:
         string = "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
         for mole in self.__moles.get_lights():
             if mole.is_toggled():
+                
                 string += "■ "
             else:
                 string += "_ "
@@ -208,6 +209,8 @@ def main():
     
     
     i = 0
+    
+    playsound.playsound('./audio/shovel-thwack-1-94135.mp3')
     
     while not game.hasCompleted():
         game.runGame()

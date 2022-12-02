@@ -104,10 +104,11 @@ class LightBoard:
 
 
 class Game:
-    __slots__ = ['__score', '__playerPos','__startTime', '__currentTime', '__endTime', '__timeAllowed', '__hasEnded', '__coinPos', '__lights', '__win']        
+    __slots__ = ['__score', '__scoreRequired','__playerPos','__startTime', '__currentTime', '__endTime', '__timeAllowed', '__hasEnded', '__coinPos', '__lights', '__win']        
     
-    def __init__(self, timeAllowed, lights):
+    def __init__(self, timeAllowed, scoreRequired, lights):
         self.__score = 0
+        self.__scoreRequired = scoreRequired
         self.__startTime = time.perf_counter()
         self.__timeAllowed = timeAllowed
         self.__lights = lights
@@ -123,7 +124,7 @@ class Game:
         if self.__win:
             my_sound = pygame.mixer.Sound('audio/smb_stage_clear.wav')
             my_sound.play()
-            print("You won the game!")
+            print("\n\n\n\n\nYou won the game!")
             print(f"Time elapsed: {str(((self.__endTime - self.__startTime) // .01 )/ 100)}s")
             i = 0
             while i < 300:
@@ -150,10 +151,10 @@ class Game:
                 break
                 
     def __printBoard(self):
-        string = f"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nTime elapsed: {str(((self.__currentTime - self.__startTime) // .01 )/ 100)}s"
+        string = f"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nTime elapsed: {str(((self.__currentTime - self.__startTime) // .01 )/ 100)}s / 60s"
         #for i in range(len(self.__lights.get_lights())):
         #    if self.__lights.get_lights()[i].is_toggled():
-        #        string += "■ "
+        #        string += "\u25a0 "
         #        if self.__playerPos == i:
         #            string2 += "P "
         #        elif self.__coinPos == i:
@@ -218,13 +219,13 @@ class Game:
             self.__lights.toggle_at(self.__coinPos, True)
             self.__score += 1
             
-            if time.perf_counter() - self.__startTime > 30:
+            if time.perf_counter() - self.__startTime > self.__timeAllowed:
                 self.__endTime = time.perf_counter()
                 self.__win = False
                 # play lose sound
                 return False
             
-            if self.__score == 5:
+            if self.__score == self.__scoreRequired:
                 self.__win = True
                 # play win sound
                 self.__endTime = time.perf_counter()
@@ -279,16 +280,13 @@ def main():
     lights.toggle_all_to(False)
     #game = Game(10, lights)
     
-    game = Game(60, lights)
-    #i = 0
-    
-    # playsound.playsound('./audio/shovel-thwack-1-94135.mp3')
-    
-    #while not game.hasCompleted():
-    #    game.runGame()
-    #   print("Current Time: " + str(game.get_current_time()))
-        # lights.toggle_all() 
-        
+    time_allowed = int(input("\n\n\n\n\n\n\n\n\n\n\n\n\n\nHow many seconds to you want to play? (enter 0 for default settings)"))
+    if time_allowed == 0:
+        game = Game(30, 25, lights)
+    else:
+        score_required = int(input("How many coins will you attempt to collect?")) 
+        game = Game(time_allowed, score_required, lights)
+            
 if __name__ == "__main__":
     main()
 

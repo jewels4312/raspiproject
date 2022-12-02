@@ -1,7 +1,7 @@
 import time, random
 import RPi.GPIO as GPIO
 from pynput import keyboard
-import playsound
+import pygame
 
 
 class Light:
@@ -104,21 +104,19 @@ class LightBoard:
 
 
 class Game:
-    __slots__ = ['__score', '__playerPos','__startTime', '__endTime', '__timeAllowed', '__currentTime', '__hasEnded', '__coinPos', '__lights']        
+    __slots__ = ['__score', '__playerPos','__startTime', '__endTime', '__timeAllowed', '__hasEnded', '__coinPos', '__lights']        
     
     def __init__(self, timeAllowed, lights):
         self.__score = 0
         self.__startTime = time.perf_counter
         self.__timeAllowed = timeAllowed
-        self.__currentTime = timeAllowed
         self.__lights = lights
         self.__playerPos = 0
+        self.__coinPos = 4 + random.randint(1,3)
         self.__hasEnded = False
-        self.__coinPos = random.randint(0, self.__lights.total_lights() - 1)
         
         self.__lights.toggle_at(self.__coinPos, True)
-        
-        # Implement keyboard listener
+        pygame.mixer.init()
         
         self.__run_event()
         
@@ -150,13 +148,16 @@ class Game:
                 
     def __printBoard(self):
         string = "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
-        for mole in self.__lights.get_lights():
-            if mole.is_toggled():
-                
+        string2 = ""
+        for light in self.__lights.get_lights():
+            if light.is_toggled():
+                string2 += "C "
                 string += "■ "
             else:
                 string += "_ "
+        print(string2)
         print(string)
+        
             
         
     def __input(self):
@@ -206,11 +207,19 @@ class Game:
         
         if self.__playerPos == self.__coinPos:
             self.__lights.toggle_at(self.__playerPos, True)
-
-            # Play sound
-            self.__coinPos = ((self.__coinPos + 4) + random.randint(1,2)) % 8
+            my_sound = pygame.mixer.Sound('audio/smw_coin.wav')
+            my_sound.play()
+            pygame.time.wait(int(my_sound.get_length() * 1000))
+            if self.__coinPos < 3:
+                self.__coinPos = 4 + random.randint(1,3)
+            elif self.__coinPos > 3:
+                self.__coinPos = random.randint(0,2)
             self.__lights.toggle_at(self.__coinPos, True)
-                
+            self.__score += 1
+            if self.__score == 25:
+                self.__endTime = time.perf_counter
+                return False
+            #self.__time = 0
         print(f"New player position: {str(self.__playerPos)}")
 
     def on_release(self, key):

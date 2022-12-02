@@ -93,16 +93,23 @@ class LightBoard:
         for i in range(len(self.__lights)):
             if i < start_index:
                 self.__lights[i].setToggle(False)
-                continue;
+                continue
             elif i > start_index + size:
                 self.__lights[i].setToggle(False)
             elif i >= start_index:
                 self.__lights[i].setToggle(True)
         
                 
+<<<<<<< HEAD
 class Game:
     __slots__ = ['__hits', '__misses', '__startTime', '__endTime', '__timeAllowed', '__currentTime', '__hasEnded', '__moles']
+=======
+>>>>>>> 00264ede4de715c1a5c7534eb25e982f821c8445
     
+        
+        
+
+def main():
     
     
     def __init__(self, timeAllowed, lights):

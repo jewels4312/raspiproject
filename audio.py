@@ -1,6 +1,8 @@
-import pygame
+import time
 
-pygame.mixer.init()
-my_sound = pygame.mixer.Sound('audio/smw_coin.wav')
-my_sound.play()
-pygame.time.wait(int(my_sound.get_length() * 1000))
+t1 = time.perf_counter()
+time.sleep(3)
+t2 = time.perf_counter()
+
+print(t2)
+print(t1)

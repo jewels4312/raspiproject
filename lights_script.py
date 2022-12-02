@@ -104,11 +104,11 @@ class LightBoard:
 
 
 class Game:
-    __slots__ = ['__score', '__playerPos','__startTime', '__endTime', '__timeAllowed', '__hasEnded', '__coinPos', '__lights']        
+    __slots__ = ['__score', '__playerPos','__startTime', '__currentTime', '__endTime', '__timeAllowed', '__hasEnded', '__coinPos', '__lights', '__win']        
     
     def __init__(self, timeAllowed, lights):
         self.__score = 0
-        self.__startTime = time.perf_counter
+        self.__startTime = time.perf_counter()
         self.__timeAllowed = timeAllowed
         self.__lights = lights
         self.__playerPos = 0
@@ -116,26 +116,29 @@ class Game:
         self.__hasEnded = False
         
         self.__lights.toggle_at(self.__coinPos, True)
+        self.__lights.toggle_at(self.__playerPos, True)
         pygame.mixer.init()
-        
+        print("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
         self.__run_event()
-        
-    
-    def runGame(self):
-        if self.__hasEnded:
-            raise Exception("Cannot run game that has ended")
-        
-        self.__checkKeys()
-        # self.__printMoles()
-        
-        if self.__currentTime < 0:
-            self.__hasEnded = True
-            self.__endTime = time.perf_counter
-            print("Game completed!")
-            
+        if self.__win:
+            my_sound = pygame.mixer.Sound('audio/smb_stage_clear.wav')
+            my_sound.play()
+            print("You won the game!")
+            print(f"Time elapsed: {str(((self.__endTime - self.__startTime) // .01 )/ 100)}s")
+            i = 0
+            while i < 300:
+                time.sleep(0.02)
+                i+=1
+                self.__lights.wave(i)
+            self.__lights.toggle_all_to(False)
+        else:
+            my_sound = pygame.mixer.Sound('audio/smb_mariodie.wav')
+            my_sound.play()
+            print("You lost! :(")
+            print(f"You collected {str(self.__score)}/25 coins in {str(((self.__endTime - self.__startTime) // .01 )/ 100)}s")
         
     def __createCoin(self):
-        if self.__lights.totalActive() >= 3:
+        if self.__lights.totalActive() >= 1:
             return
         
         while True:
@@ -147,15 +150,19 @@ class Game:
                 break
                 
     def __printBoard(self):
-        string = "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
-        string2 = ""
-        for light in self.__lights.get_lights():
-            if light.is_toggled():
-                string2 += "C "
-                string += "■ "
-            else:
-                string += "_ "
-        print(string2)
+        string = f"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nTime elapsed: {str(((self.__currentTime - self.__startTime) // .01 )/ 100)}s"
+        #for i in range(len(self.__lights.get_lights())):
+        #    if self.__lights.get_lights()[i].is_toggled():
+        #        string += "■ "
+        #        if self.__playerPos == i:
+        #            string2 += "P "
+        #        elif self.__coinPos == i:
+        #            string2 += "C "
+        #        else:
+        #            pass
+        #    else:
+        #        string += "_ "
+        #        string2 += "  "
         print(string)
         
             
@@ -169,14 +176,7 @@ class Game:
     def hasCompleted(self):
         return self.__hasEnded
     
-    def __spawnMoleEvent(self): # When player inputs
-        chance = random.randint(1, 100)
-        if chance < 8:
-            self.__createMole()
-        pass
-    
     def __run_event(self):
-        
         with keyboard.Listener(on_press=self.on_press, on_release=self.on_release) as listener:
             listener.join()
         return False
@@ -184,6 +184,7 @@ class Game:
     def on_press(self, key):
         
         # Handle the player movement
+        self.__currentTime = time.perf_counter()
         self.__lights.toggle_at(self.__playerPos, False)
         if key == keyboard.Key.right:
             if self.__playerPos == self.__lights.total_lights() - 1:
@@ -209,20 +210,31 @@ class Game:
             self.__lights.toggle_at(self.__playerPos, True)
             my_sound = pygame.mixer.Sound('audio/smw_coin.wav')
             my_sound.play()
-            pygame.time.wait(int(my_sound.get_length() * 1000))
+            pygame.time.wait(int((my_sound.get_length() * 1000)/2))
             if self.__coinPos < 3:
                 self.__coinPos = 4 + random.randint(1,3)
             elif self.__coinPos > 3:
                 self.__coinPos = random.randint(0,2)
             self.__lights.toggle_at(self.__coinPos, True)
             self.__score += 1
-            if self.__score == 25:
-                self.__endTime = time.perf_counter
+            
+            if time.perf_counter() - self.__startTime > 30:
+                self.__endTime = time.perf_counter()
+                self.__win = False
+                # play lose sound
                 return False
+            
+            if self.__score == 5:
+                self.__win = True
+                # play win sound
+                self.__endTime = time.perf_counter()
+                return False
+            
+        self.__printBoard()
             #self.__time = 0
-        print(f"New player position: {str(self.__playerPos)}")
 
     def on_release(self, key):
+        self.__printBoard()
         pass
         
     

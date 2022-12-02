@@ -1,4 +1,4 @@
-import time
+import time, random
 import RPi.GPIO as GPIO
 
 
@@ -77,19 +77,32 @@ class LightBoard:
                 self.__lights[i].setToggle(True)
         
                 
+class Game:
+    __slots__ = ['__hits', '__misses', '__startTime', '__timeAllowed', '__currentTime', '__currentMole']
     
-        
-        
+    
+    
+    def __init__(self, timeAllowed):
+        self.__hits = 0
+        self.__misses = 0
+        self.__startTime = time.perf_counter
+        self.__timeAllowed = timeAllowed
+        self.__currentTime = timeAllowed
+        self.__currentMole = -1
 
-def main():
     
-    GPIO.setwarnings(False) 
-    GPIO.setmode(GPIO.BCM)    
+    def runGame(self):
+        time.sleep(.1)
+        self.__currentTime -= .1
+        
+    def get_current_time(self):
+        return self.__currentTime
+        
     
-    lights = LightBoard()
-    
-    # Lights in order.
-    
+    def event(): # When player inputs
+        pass
+        
+def lights_setup(lights):
     l1 = Light('red', 18)
     l2 = Light('yellow', 23)
     l3 = Light('blue', 24)
@@ -112,13 +125,26 @@ def main():
     lights.add_light(l6)
     lights.add_light(l7)
     lights.add_light(l8)
+        
+
+def main():
+    
+    GPIO.setwarnings(False) 
+    GPIO.setmode(GPIO.BCM)    
+    
+    lights = LightBoard()
+    
+    # Lights in order.
+    lights_setup(lights)
+    
+    game = Game(60)
+    
     
     i = 0
     
     while True:
-        time.sleep(0.1)
-        i += 1 
-        lights.wave(i) 
+        game.runGame()
+        print("Current Time: " + str(game.get_current_time()))
         # lights.toggle_all() # 
 
         

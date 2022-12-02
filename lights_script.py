@@ -100,17 +100,8 @@ class LightBoard:
                 self.__lights[i].setToggle(True)
         
                 
-<<<<<<< HEAD
 class Game:
-    __slots__ = ['__hits', '__misses', '__startTime', '__endTime', '__timeAllowed', '__currentTime', '__hasEnded', '__moles']
-=======
->>>>>>> 00264ede4de715c1a5c7534eb25e982f821c8445
-    
-        
-        
-
-def main():
-    
+    __slots__ = ['__hits', '__misses', '__startTime', '__endTime', '__timeAllowed', '__currentTime', '__hasEnded', '__moles']        
     
     def __init__(self, timeAllowed, lights):
         self.__hits = 0
